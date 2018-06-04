@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:aop="http://www.springframework.org/schema/aop" xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:jaxrs="http://cxf.apache.org/jaxrs" xmlns:tx="http://www.springframework.org/schema/tx"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:jms="http://www.springframework.org/schema/jms"  
+	xmlns:p="http://www.springframework.org/schema/p"
+	xmlns:task="http://www.springframework.org/schema/task"  
+	xsi:schemaLocation="http://www.springframework.org/schema/beans 
+	http://www.springframework.org/schema/beans/spring-beans-4.2.xsd 
+	http://www.springframework.org/schema/context 
+	http://www.springframework.org/schema/context/spring-context.xsd 
+	http://www.springframework.org/schema/tx 
+	http://www.springframework.org/schema/tx/spring-tx-4.2.xsd 
+	http://www.springframework.org/schema/aop 
+	http://www.springframework.org/schema/aop/spring-aop-4.2.xsd  
+	http://cxf.apache.org/jaxrs http://cxf.apache.org/schemas/jaxrs.xsd
+	http://www.springframework.org/schema/jms  
+    http://www.springframework.org/schema/jms/spring-jms-4.2.xsd 
+    http://www.springframework.org/schema/task
+	http://www.springframework.org/schema/task/spring-task-4.2.xsd">
+
+
+	<context:annotation-config />
+	<context:component-scan base-package="com.inn.activemq" />
+
+
+	<bean id="connectionFactoryForSender" class="org.apache.activemq.ActiveMQConnectionFactory"
+		p:brokerURL="failover:(tcp://localhost:61616)" />
+
+	<bean id="jmsTemplate" class="org.springframework.jms.core.JmsTemplate">
+		<constructor-arg name="connectionFactory" ref="connectionFactoryForSender"></constructor-arg>
+		<property name="defaultDestinationName" value="messageQueue"></property>
+	</bean>
+
+	<bean id="queueSender" class="com.inn.activemq.utils.sender.MessageSender">
+		<property name="jmsTemplate" ref="jmsTemplate"></property>
+	</bean>
+	<!-- Active MQ Sender configuration End -->
+	
+	<!-- Active MQ receiver configuration start -->
+	
+	<bean id="connectionFactoryForReceiver" class="org.apache.activemq.ActiveMQConnectionFactory" 
+	p:brokerURL="failover:(tcp://localhost:61616)" />
+	
+	<bean id="queueReceiver" class="com.inn.activemq.utils.receiver.MessageReceiver"></bean>
+	
+	<jms:listener-container container-type="default" connection-factory="connectionFactoryForReceiver" acknowledge="auto">
+		<jms:listener id="startStopConsumer" destination="messageQueue" ref="queueReceiver" method="onMessage"></jms:listener>
+	</jms:listener-container>
+	
+	<!-- Active MQ receiver configuration end -->
+
+	
+</beans>
